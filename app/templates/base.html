@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <meta name="theme-color" content="#123f35">
+  <title>{% block title %}Bereket Yönetim{% endblock %}</title>
+  <link rel="stylesheet" href="{{ app_prefix }}/static/app.css">
+  <link rel="manifest" href="{{ app_prefix }}/static/manifest.webmanifest">
+</head>
+<body>
+{% if user %}
+<div class="shell">
+  <aside class="side">
+    <a class="brand" href="/dashboard">BEREKET YÖNETİM
+      <small>{{ 'CATERING' if user.business_type.value == 'catering' else 'RESTORAN' }} HESABI</small>
+    </a>
+    <nav class="nav">
+      <a href="/dashboard">▦ Panel</a>
+      {% if user.business_type.value == 'catering' %}
+      <a href="/catering/customers">♙ Müşteriler</a>
+      <a href="/catering/daily">▣ Günlük Yemek</a>
+      {% elif is_pos_host %}
+      <a href="/pos/masalar">▦ POS Masalar</a>
+      <a href="/kasa">₺ Kasa</a>
+      <a href="/yonetim">◉ Yönetim</a>
+      <a href="/kasa/vardiya">▤ Vardiya / Z</a>
+      {% else %}
+      <a href="/restaurant">₺ Günlük Ciro & Gider</a>
+      <a href="/restaurant/employees">♟ Çalışanlar & Maaş</a>
+      <a href="/restaurant/reports">◔ Raporlama</a>
+      {% endif %}
+      <form method="post" action="/logout"><button class="logout">↪ Çıkış yap</button></form>
+    </nav>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <span class="top-title">İşletmenizin verileri sadece size aittir.</span>
+      <span class="user"><span class="avatar">{{ user.username[:1]|upper }}</span>{{ user.username }}</span>
+    </header>
+    <section class="content">{% block content %}{% endblock %}</section>
+  </main>
+</div>
+{% else %}
+{% block auth %}{% endblock %}
+{% endif %}
+<script>
+(() => {
+  const token = {{ csrf_token|tojson }};
+  const prefix = {{ app_prefix|tojson }};
+  window.APP_PREFIX = prefix;
+  const withPrefix = (value) => {
+    if (!prefix || !value || !value.startsWith('/') || value === prefix || value.startsWith(prefix + '/')) return value;
+    return prefix + value;
+  };
+  document.querySelectorAll('a[href^="/"], img[src^="/"], script[src^="/"]').forEach((element) => {
+    const attribute = element.hasAttribute('href') ? 'href' : 'src';
+    element.setAttribute(attribute, withPrefix(element.getAttribute(attribute)));
+  });
+  document.querySelectorAll('form').forEach((form) => {
+    if ((form.method || '').toLowerCase() !== 'post' || form.querySelector('input[name="csrf_token"]')) return;
+    const input = document.createElement('input');
+    input.type = 'hidden'; input.name = 'csrf_token'; input.value = token;
+    form.prepend(input);
+  });
+  document.querySelectorAll('form').forEach((form) => {
+    const action = form.getAttribute('action');
+    if (action) form.setAttribute('action', withPrefix(action));
+    form.addEventListener('submit', () => {
+      const currentAction = form.getAttribute('action');
+      if (currentAction) form.setAttribute('action', withPrefix(currentAction));
+    });
+  });
+})();
+</script>
+<script src="{{ app_prefix }}/static/pos.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block auth %}
+<main class="auth">
+  <section class="auth-card">
+    <span class="badge gold">BEREKET YÖNETİM</span>
+    <h1>Tekrar hoş geldiniz</h1>
+    <p>Kullanıcı adınız sizi otomatik olarak catering veya restoran bölümüne yönlendirir.</p>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <label>Kullanıcı adı
+        <input name="username" required autocomplete="username" autocapitalize="none">
+      </label>
+      <label>Şifre
+        <input type="password" name="password" required minlength="8" autocomplete="current-password">
+      </label>
+      <button class="btn" type="submit">Giriş yap</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

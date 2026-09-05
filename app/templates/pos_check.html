@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ table.display_name }} · Bereket POS{% endblock %}
+{% block content %}
+<div class="heading"><div><a class="muted" href="/pos/masalar">← Masalara dön</a><h1>{{ table.display_name }}</h1>{% if service %}<p>{{ service.guest_count }} kişi · Garson: {{ waiter.name }} · Adisyon #{{ check.check_number }}</p>{% else %}<p>Durum: BOŞ</p>{% endif %}</div>{% if service %}<div class="actions"><span class="badge {% if check_requested %}gold{% endif %}">{% if service.operational_status.value == 'PAYMENT_IN_PROGRESS' %}ÖDEMEDE{% elif check_requested %}HESAP İSTEDİ{% else %}AÇIK{% endif %}</span>{% if permissions['check.request'] and not check_requested %}<button class="btn gold" onclick="checkRequest()">Hesap İstedi</button>{% elif permissions['check.cancel_request'] and check_requested %}<button class="btn danger" onclick="checkRequestCancel()">Talebi Geri Al</button>{% endif %}{% if permissions['payment.create'] %}<a class="btn" href="/kasa?check_id={{ check.id }}">Ödeme Al</a>{% endif %}</div>{% endif %}</div>
+
+{% if not service %}
+<section class="card open-service-card"><span class="badge">BOŞ MASA</span><h2>Servis aç</h2><p>Kişi sayısını girerek yeni servis ve adisyon oluşturun.</p>{% if permissions['service.open'] %}<div class="guest-picker"><button onclick="changeGuest(-1)">−</button><strong id="guest-count">2</strong><button onclick="changeGuest(1)">+</button></div><button class="btn pos-primary" onclick="openService()">SERVİSİ AÇ</button>{% else %}<div class="error">Bu masada servis açma yetkiniz bulunmuyor.</div>{% endif %}</section>
+{% else %}
+<div class="pos-check-layout">
+  <section class="product-panel">
+    {% set daily_products = products|selectattr('is_favorite')|list %}
+    {% if daily_products %}
+    <div class="daily-menu"><h3>⭐ Günün Menüsü</h3><div class="product-grid daily-menu-grid">{% for product in daily_products %}<button class="product-tile favorite" onclick="addProduct({{ product.id }})"><strong>{{ product.name }}</strong><span>{{ product.price|money }}</span></button>{% endfor %}</div></div>
+    {% endif %}
+    <div class="category-strip"><button class="active" data-cat="all">Tümü</button>{% for category in categories %}<button data-cat="{{ category.id }}">{{ category.name }}</button>{% endfor %}</div>
+    <div class="product-grid">{% for product in products %}<button class="product-tile{% if product.is_favorite %} favorite{% endif %}" data-category="{{ product.category_id }}" onclick="addProduct({{ product.id }})">{% if product.is_favorite %}<span class="favorite-mark">⭐</span>{% endif %}<strong>{{ product.name }}</strong><span>{{ product.price|money }}</span></button>{% else %}<div class="card empty">Satışta ürün bulunmuyor.</div>{% endfor %}</div>
+  </section>
+  <aside class="check-panel card">
+    <h2>Aktif adisyon</h2><div class="check-items">{% for item in items %}<div class="check-row {% if item.is_cancelled %}cancelled{% endif %}"><div><strong>{{ item.quantity }} × {{ item.product_name_snapshot }}</strong>{% if item.note %}<small>{{ item.note }}</small>{% endif %}{% if item.is_comp %}<span class="badge gold">İKRAM</span>{% endif %}{% if item.is_cancelled %}<span class="badge red">İPTAL</span>{% endif %}</div><div class="check-row-price">{{ item.line_total|money }}{% if not item.is_cancelled %}<div class="mini-actions">{% if permissions['order.change_quantity'] %}<button onclick="quantity({{ item.id }}, '{{ item.quantity }}')">Adet</button>{% endif %}{% if permissions['order.comp_item'] and not item.is_comp %}<button onclick="comp({{ item.id }})">İkram</button>{% endif %}{% if permissions['order.cancel_item'] %}<button class="danger-text" onclick="cancelItem({{ item.id }})">İptal</button>{% endif %}</div>{% endif %}</div></div>{% else %}<div class="empty">Henüz ürün eklenmedi.</div>{% endfor %}</div>
+    <div class="totals"><div><span>Ara toplam</span><strong>{{ check.subtotal|money }}</strong></div><div><span>İndirim</span><strong>− {{ check.discount_total|money }}</strong></div><div><span>İkram</span><strong>− {{ check.comp_total|money }}</strong></div><div class="grand"><span>Genel toplam</span><strong>{{ check.final_total|money }}</strong></div></div>
+    {% if permissions['order.add_item'] and unsent_count %}<form method="post" action="/pos/masa/{{ table.id }}/mutfaga-gonder" target="_blank"><button class="btn pos-primary full-button" type="submit">MUTFAĞA GÖNDER ({{ unsent_count }})</button></form>{% endif %}
+    {% if permissions['discount.apply'] %}<button class="btn gold full-button" onclick="discount()">İndirim Uygula</button>{% endif %}
+  </aside>
+</div>
+{% endif %}
+<script>
+let guests=2; const checkId={{ check.id if check else 'null' }};
+function changeGuest(delta){guests=Math.max(1,Math.min(50,guests+delta));document.getElementById('guest-count').textContent=guests}
+async function openService(){await POS.call('/api/v1/services',{table_id:{{ table.id }},guest_count:guests});location.reload()}
+async function addProduct(id){await POS.call(`/api/v1/checks/${checkId}/items`,{product_id:id,quantity:1});location.reload()}
+async function checkRequest(){await POS.call(`/api/v1/checks/${checkId}/request-check`,{});location.reload()}
+async function checkRequestCancel(){await POS.call(`/api/v1/checks/${checkId}/cancel-check-request`,{});location.reload()}
+async function quantity(id,current){const value=prompt('Yeni adet',current);if(value) {await POS.call(`/api/v1/checks/${checkId}/items/${id}`,{quantity:value},'PATCH');location.reload()}}
+async function cancelItem(id){const reason=prompt('İptal nedeni');if(reason){await POS.call(`/api/v1/checks/${checkId}/items/${id}/cancel`,{reason});location.reload()}}
+async function comp(id){const reason=prompt('İkram nedeni');if(reason){await POS.call(`/api/v1/checks/${checkId}/items/${id}/comp`,{reason});location.reload()}}
+async function discount(){const percentage=prompt('İndirim yüzdesi');if(!percentage)return;const reason=prompt('İndirim nedeni');if(reason){await POS.call(`/api/v1/checks/${checkId}/discounts`,{discount_type:'PERCENTAGE',value:percentage,reason});location.reload()}}
+document.querySelectorAll('.category-strip button').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('.category-strip button').forEach(x=>x.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.product-tile').forEach(x=>x.hidden=button.dataset.cat!=='all'&&x.dataset.category!==button.dataset.cat)}));
+if(checkId) POS.liveReload([`/pos/masa/{{ table.id }}`]);
+</script>
+{% endblock %}

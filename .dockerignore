@@ -1,0 +1,14 @@
+.env
+.testdeps
+.deps
+_deps
+smoke.db
+*.db
+__pycache__
+*.py[cod]
+.git
+imports/*
+tests
+.npm-cache
+native-test-deps
+tmp

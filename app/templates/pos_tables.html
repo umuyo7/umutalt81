@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Masalar · Bereket POS{% endblock %}
+{% block content %}
+<div class="heading pos-heading"><div><span class="badge gold">GARSON POS</span><h1>Masalar</h1><p>Servis durumunu seçin ve işleme devam edin.</p></div><div class="live-pill"><span></span> Canlı</div></div>
+<div class="section-filters" role="group" aria-label="Salon filtresi"><button class="active" data-section="all">Tümü</button>{% for section in sections %}<button data-section="{{ section.id }}">{{ section.name }}</button>{% endfor %}</div>
+<div class="table-grid">
+{% for row in cards %}
+  <a class="table-tile status-{{ row.status|lower }}" data-section-id="{{ row.section.id }}" href="/pos/masa/{{ row.table.id }}" aria-label="{{ row.table.display_name }} {{ row.status }}">
+    <div class="table-tile-top"><strong>{{ row.table.display_name }}</strong><span class="status-label">{% if row.status == 'EMPTY' %}○ BOŞ{% elif row.status == 'OPEN' %}● AÇIK{% elif row.status == 'CHECK_REQUESTED' %}◷ HESAP İSTEDİ{% else %}₺ ÖDEMEDE{% endif %}</span></div>
+    {% if row.service %}<div class="table-meta"><span>{{ row.service.guest_count }} kişi</span><span>{{ row.waiter.name }}</span></div><div class="table-total">{{ row.check.final_total|money }}</div><small data-opened-at="{{ row.service.opened_at.isoformat() }}">—</small>{% else %}<div class="empty-table-mark">Servis açmaya hazır</div>{% endif %}
+  </a>
+{% else %}
+  <div class="card empty">Henüz masa tanımlanmadı. Yönetim → Tanımlar ekranından salon ve masa ekleyin.</div>
+{% endfor %}
+</div>
+<script>
+document.querySelectorAll('.section-filters button').forEach(button => button.addEventListener('click', () => {
+  document.querySelectorAll('.section-filters button').forEach(x => x.classList.remove('active')); button.classList.add('active');
+  document.querySelectorAll('.table-tile').forEach(card => card.hidden = button.dataset.section !== 'all' && card.dataset.sectionId !== button.dataset.section);
+}));
+POS.updateDurations(); POS.liveReload(['/pos/masalar']);
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+{
+  "format": "bereket-infinityfree-v1",
+  "exported_at": "2026-09-04T00:00:00Z",
+  "tables": {
+    "musteriler": [{"id": "10", "sirket_ismi": "Örnek AŞ", "sahis_adi": "Ali", "telefon": "555", "eposta": "a@example.com", "adres": "İstanbul", "anlasilan_yemek_fiyati": "100.50", "mesai_yemek_fiyati": "120", "varsayilan_kisi_sayisi": "5", "faturali_mi": "1", "devreden_borc": "250", "aktif_mi": "1"}],
+    "gunluk_yemek_verileri": [{"id": "20", "musteri_id": "10", "tarih": "2026-09-01", "yemek_adedi": "5", "mesai_yemek_adedi": "1"}],
+    "tahsilatlar": [{"id": "30", "musteri_id": "10", "tarih": "2026-09-02", "tutar": "200", "aciklama": "Nakit"}],
+    "taziye_yemekleri": [{"id": "40", "firma_adi": "Örnek", "tarih": "2026-09-03", "adet": "20", "birim_fiyat": "110", "toplam_tutar": "2200", "aciklama": ""}],
+    "gunluk_giderler": [{"id": "50", "tarih": "2026-09-01", "kategori": "Market", "aciklama": "Sebze", "tutar": "500"}],
+    "calisanlar": [{"id": "60", "ad_soyad": "Ayşe", "gorev": "Aşçı", "telefon": "555", "aylik_maas": "30000", "ise_giris_tarihi": "2026-01-01", "aktif": "1"}],
+    "maas_odemeleri": [{"id": "70", "calisan_id": "60", "donem": "2026-08", "tarih": "2026-09-01", "tutar": "30000", "aciklama": ""}],
+    "ekstreler": [{"id": "80", "musteri_id": "10", "firma_adi": "Örnek AŞ", "olusturma_tarihi": "2026-09-03 12:00:00"}]
+  }
+}

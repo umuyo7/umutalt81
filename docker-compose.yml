@@ -1,0 +1,56 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./imports:/imports:ro
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  catering:
+    build:
+      context: .
+      dockerfile: Dockerfile.catering
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      catering_db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:80"
+  catering_db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${CATERING_DB_NAME}
+      MARIADB_USER: ${CATERING_DB_USER}
+      MARIADB_PASSWORD: ${CATERING_DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${CATERING_DB_ROOT_PASSWORD}
+    volumes:
+      - catering_mysql_data:/var/lib/mysql
+      - ./catering-php/database.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -u root -p$${MARIADB_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  postgres_data:
+  catering_mysql_data:

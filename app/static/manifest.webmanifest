@@ -1,0 +1,14 @@
+{
+  "name": "Bereket Sofram POS",
+  "short_name": "Bereket POS",
+  "start_url": "../pos/masalar",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#123f35",
+  "lang": "tr",
+  "description": "Bereket Sofram restoran servis ve adisyon yönetimi",
+  "icons": [
+    {"src": "./firma_logo.png", "sizes": "1080x1080", "type": "image/png", "purpose": "any"}
+  ]
+}

@@ -1,0 +1,9 @@
+.env
+.testdeps/
+.deps/
+_deps/
+smoke.db
+*.db
+__pycache__/
+*.py[cod]
+imports/*.json
