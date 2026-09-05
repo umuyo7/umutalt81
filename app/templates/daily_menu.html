@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Günün Menüsü · Bereket POS{% endblock %}{% block content %}
+<div class="heading"><div><span class="badge gold">GÜNÜN MENÜSÜ</span><h1>Günün menüsü kısayolları</h1><p>Bugün öne çıkarmak istediğiniz ürünleri işaretleyin; garsonların sipariş ekranında üstte ⭐ kısayol olarak görünür. Seçim gün boyunca geçerlidir, istediğiniz an güncelleyebilirsiniz.</p></div><span class="badge">{{ selected_count }} ürün seçili</span></div>
+<form method="post" action="/kasa/gunun-menusu">
+{% for category in categories %}
+<section class="card daily-menu-editor"><h2>{{ category.name }}</h2>
+  <div class="daily-menu-picker">
+  {% for product in by_category.get(category.id, []) %}
+    <label class="daily-menu-option"><input type="checkbox" name="product_ids" value="{{ product.id }}" {% if product.is_favorite %}checked{% endif %}><span>{{ product.name }}</span><small>{{ product.price|money }}</small></label>
+  {% else %}
+    <p class="muted">Bu kategoride ürün yok.</p>
+  {% endfor %}
+  </div>
+</section>
+{% else %}
+<section class="card empty">Henüz kategori/ürün tanımlanmamış.</section>
+{% endfor %}
+<button class="btn pos-primary full-button" type="submit">Günün Menüsünü Kaydet</button>
+</form>
+{% endblock %}

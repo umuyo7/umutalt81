@@ -40,6 +40,7 @@ from .pos_models import (
 )
 from .pos_schemas import (
     CategoryCreateRequest,
+    DailyMenuUpdateRequest,
     DiscountRequest,
     GuestCountRequest,
     ItemAddRequest,
@@ -87,6 +88,7 @@ from .pos_services import (
     merge_checks,
     open_service,
     open_shift,
+    set_daily_menu,
     recalculate_check,
     remove_discount,
     reopen_check,
@@ -474,6 +476,12 @@ def products(category_id: int | None = None, user: User = Depends(actor), db: Se
         statement = statement.where(Product.category_id == category_id)
     rows = db.scalars(statement.order_by(Product.is_favorite.desc(), Product.sort_order, Product.name)).all()
     return ok([{"id": row.id, "category_id": row.category_id, "name": row.name, "price": str(row.price), "is_favorite": row.is_favorite} for row in rows])
+
+
+@router.post("/menu/daily-picks", dependencies=[Depends(csrf_guard)])
+def daily_menu_update(payload: DailyMenuUpdateRequest, user: User = Depends(actor), db: Session = Depends(get_db)):
+    picked = commit_command(db, lambda: set_daily_menu(db, user.id, payload.product_ids))
+    return ok({"product_ids": sorted(row.id for row in picked)})
 
 
 @router.post("/admin/sections", dependencies=[Depends(csrf_guard)])

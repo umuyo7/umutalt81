@@ -143,3 +143,7 @@ class RolePermissionsUpdateRequest(ReasonRequest):
 class NamedActiveUpdateRequest(ReasonRequest):
     name: str = Field(min_length=1, max_length=120)
     is_active: bool
+
+
+class DailyMenuUpdateRequest(BaseModel):
+    product_ids: list[int] = Field(default_factory=list, max_length=200)

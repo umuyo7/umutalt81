@@ -40,7 +40,7 @@ from .pos_models import (
 )
 from .pos_services import (
     ACTIVE_SERVICE_STATUSES, PosError, active_check_request, close_shift, open_shift,
-    send_to_kitchen, shift_summary,
+    send_to_kitchen, set_daily_menu, shift_summary,
 )
 from .reporting import operation_report
 from .request_context import begin_request, end_request
@@ -788,7 +788,8 @@ def cashier_page(request: Request, db: Session = Depends(get_db)):
         .where(Check.status == CheckStatus.CLOSED)
         .order_by(Check.closed_at.desc()).limit(20)
     ).all()
-    return page(request, user, "cashier.html", checks=checks, recent_receipts=recent_receipts)
+    can_manage_daily_menu = permission_decision(db, user.id, "menu.daily_manage").allowed
+    return page(request, user, "cashier.html", checks=checks, recent_receipts=recent_receipts, can_manage_daily_menu=can_manage_daily_menu)
 
 
 @app.get("/kasa/fis/{check_id}")
@@ -852,6 +853,36 @@ def shift_close_page(request: Request, closing_cash_amount: str = Form(...), not
         db.rollback()
         raise
     return RedirectResponse(f"/yonetim/vardiyalar?closed={closed.id}", status_code=303)
+
+
+@app.get("/kasa/gunun-menusu")
+def daily_menu_page(request: Request, db: Session = Depends(get_db)):
+    user, response = require_pos_page(request, db, "menu.daily_manage")
+    if response:
+        return response
+    categories = db.scalars(select(Category).where(Category.is_active.is_(True)).order_by(Category.sort_order, Category.name)).all()
+    products = db.scalars(select(Product).where(Product.is_active.is_(True)).order_by(Product.sort_order, Product.name)).all()
+    by_category: dict[int, list[Product]] = {}
+    for product in products:
+        by_category.setdefault(product.category_id, []).append(product)
+    return page(request, user, "daily_menu.html", categories=categories, by_category=by_category, selected_count=sum(1 for row in products if row.is_favorite))
+
+
+@app.post("/kasa/gunun-menusu")
+async def daily_menu_save(request: Request, db: Session = Depends(get_db)):
+    form = await request.form()
+    validate_csrf(request, str(form.get("csrf_token", "")))
+    user, response = require_pos_page(request, db, "menu.daily_manage")
+    if response:
+        return response
+    product_ids = [int(value) for value in form.getlist("product_ids") if str(value).isdigit()]
+    try:
+        set_daily_menu(db, user.id, product_ids)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    return RedirectResponse("/kasa/gunun-menusu", status_code=303)
 
 
 @app.get("/yonetim")

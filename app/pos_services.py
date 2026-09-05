@@ -936,6 +936,20 @@ def create_category(db: Session, actor_user_id: int, name: str) -> Category:
     return row
 
 
+def set_daily_menu(db: Session, actor_user_id: int, product_ids: list[int]) -> list[Product]:
+    require_permission(db, actor_user_id, "menu.daily_manage")
+    wanted = set(product_ids)
+    products = db.scalars(select(Product).where(Product.is_active.is_(True))).all()
+    before = sorted(row.id for row in products if row.is_favorite)
+    picked: list[Product] = []
+    for row in products:
+        row.is_favorite = row.id in wanted
+        if row.is_favorite:
+            picked.append(row)
+    _audit(db, actor_user_id, "DAILY_MENU_UPDATE", "product", "daily_menu", old_value={"product_ids": before}, new_value={"product_ids": sorted(row.id for row in picked)})
+    return picked
+
+
 def create_product(db: Session, actor_user_id: int, category_id: int, name: str, price: Decimal, is_favorite: bool = False) -> Product:
     require_permission(db, actor_user_id, "products.manage")
     price = money(price)

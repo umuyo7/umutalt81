@@ -48,6 +48,7 @@ PERMISSION_DEFINITIONS: dict[str, tuple[str, PermissionValueType]] = {
     "reports.export": ("Raporları dışa aktarır.", PermissionValueType.BOOLEAN),
     "shift.open": ("Kasa vardiyası açar.", PermissionValueType.BOOLEAN),
     "shift.close": ("Kasa vardiyasını kapatır ve Z özeti alır.", PermissionValueType.BOOLEAN),
+    "menu.daily_manage": ("Günün menüsü kısayollarını (öne çıkan ürünler) seçer.", PermissionValueType.BOOLEAN),
     "users.manage": ("Kullanıcı ve rol yönetir.", PermissionValueType.BOOLEAN),
     "products.manage": ("Ürün ve kategori yönetir.", PermissionValueType.BOOLEAN),
     "tables.manage": ("Salon ve masa yönetir.", PermissionValueType.BOOLEAN),
@@ -67,7 +68,7 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
     "cashier": {
         "service.open", "service.close", "service.change_guest_count", "order.add_item", "order.change_quantity",
         "check.request", "payment.create", "payment.create_without_check_request", "payment.close_check",
-        "discount.max_percent",
+        "discount.max_percent", "menu.daily_manage",
     },
     "manager": set(PERMISSION_DEFINITIONS),
     "admin": set(PERMISSION_DEFINITIONS),
